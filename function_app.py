@@ -11,59 +11,61 @@ app = func.FunctionApp()
 ANALYSIS_BLOB_URL = os.getenv("ANALYSIS_BLOB_URL", "https://panstorage.blob.core.windows.net/open/analysis.json")
 
 def create_form_html(data):
-    """Create a styled, editable form from the analysis data"""
+    """Create a styled, editable form matching PanaceaPAN theme"""
     return f"""
-    <div class="editable-fields">
-        <h2 class="text-2xl font-bold mb-6">Receipt Details</h2>
+    <div class="editable-fields bg-white p-6 rounded-lg shadow-lg">
+        <h2 class="text-3xl font-bold mb-6 text-green-600">Receipt Details</h2>
         
-        <div class="grid gap-4">
+        <div class="space-y-4">
             <div class="form-group">
-                <label for="vendor" class="text-green-700 font-medium">Vendor Name:</label>
-                <input id="vendor" type="text" value="{data['vendor_name']}" 
-                       class="w-full p-2 border rounded focus:ring-2 focus:ring-green-300"/>
+                <label for="vendor" class="block text-green-700 font-medium mb-1">Vendor Name:</label>
+                <input id="vendor" type="text" value="{data.get('vendor_name', 'Unknown')}" 
+                       class="w-full p-2 border border-green-200 rounded-md focus:ring-2 focus:ring-green-300 focus:border-transparent"/>
             </div>
 
             <div class="form-group">
-                <label for="address" class="text-green-700 font-medium">Address:</label>
-                <input id="address" type="text" value="{data['address']}"
-                       class="w-full p-2 border rounded focus:ring-2 focus:ring-green-300"/>
+                <label for="address" class="block text-green-700 font-medium mb-1">Address:</label>
+                <input id="address" type="text" value="{data.get('address', 'Unknown')}"
+                       class="w-full p-2 border border-green-200 rounded-md focus:ring-2 focus:ring-green-300"/>
             </div>
 
             <div class="form-group">
-                <label for="phone" class="text-green-700 font-medium">Phone:</label>
-                <input id="phone" type="text" value="{data['phone']}"
-                       class="w-full p-2 border rounded focus:ring-2 focus:ring-green-300"/>
+                <label for="phone" class="block text-green-700 font-medium mb-1">Phone:</label>
+                <input id="phone" type="text" value="{data.get('phone', 'Unknown')}"
+                       class="w-full p-2 border border-green-200 rounded-md focus:ring-2 focus:ring-green-300"/>
             </div>
 
             <div class="form-group">
-                <label for="date" class="text-green-700 font-medium">Date:</label>
-                <input id="date" type="date" value="{data['date']}"
-                       class="w-full p-2 border rounded focus:ring-2 focus:ring-green-300"/>
+                <label for="date" class="block text-green-700 font-medium mb-1">Date:</label>
+                <input id="date" type="date" value="{data.get('date', '2025-01-12')}"
+                       class="w-full p-2 border border-green-200 rounded-md focus:ring-2 focus:ring-green-300"/>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
                 <div class="form-group">
-                    <label for="tax" class="text-green-700 font-medium">Tax:</label>
-                    <input id="tax" type="text" value="{data['tax']}"
-                           class="w-full p-2 border rounded focus:ring-2 focus:ring-green-300"/>
+                    <label for="tax" class="block text-green-700 font-medium mb-1">Tax:</label>
+                    <input id="tax" type="text" value="{data.get('tax', '0.00')}"
+                           class="w-full p-2 border border-green-200 rounded-md focus:ring-2 focus:ring-green-300"/>
                 </div>
 
                 <div class="form-group">
-                    <label for="total" class="text-green-700 font-medium">Total:</label>
-                    <input id="total" type="text" value="{data['total']}"
-                           class="w-full p-2 border rounded focus:ring-2 focus:ring-green-300"/>
+                    <label for="total" class="block text-green-700 font-medium mb-1">Total:</label>
+                    <input id="total" type="text" value="{data.get('total', '0.00')}"
+                           class="w-full p-2 border border-green-200 rounded-md focus:ring-2 focus:ring-green-300"/>
                 </div>
             </div>
 
             <div class="form-group">
-                <label for="category" class="text-green-700 font-medium">Category:</label>
-                <input id="category" type="text" value="{data['category']}"
-                       class="w-full p-2 border rounded focus:ring-2 focus:ring-green-300"/>
+                <label for="category" class="block text-green-700 font-medium mb-1">Category:</label>
+                <input id="category" type="text" value="{data.get('category', 'Unknown')}"
+                       class="w-full p-2 border border-green-200 rounded-md focus:ring-2 focus:ring-green-300"/>
             </div>
 
-            <div class="form-group mt-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                <div class="text-yellow-800 font-medium mb-2">AI Commentary:</div>
-                <p class="italic text-yellow-700">{data['commentary']}</p>
+            <div class="mt-6 bg-yellow-50 p-4 rounded-lg border-2 border-yellow-200 shadow-md">
+                <div class="text-yellow-800 font-bold mb-2">AI Commentary:</div>
+                <p class="italic text-yellow-700 text-lg leading-relaxed">
+                    {data.get('commentary', 'AI is thinking of something witty to say...')}
+                </p>
             </div>
         </div>
     </div>
