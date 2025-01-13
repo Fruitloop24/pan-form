@@ -1,11 +1,12 @@
 import azure.functions as func
 import requests
 import os
+import logging  # Added this
 
 app = func.FunctionApp()
 
 @app.function_name(name="form_edit")
-@app.route(route="form_edit", methods=["GET", "POST"], auth_level=func.AuthLevel.ANONYMOUS)  # Added GET for local testing
+@app.route(route="form_edit", methods=["GET", "POST"], auth_level=func.AuthLevel.ANONYMOUS)
 async def form_edit(req: func.HttpRequest) -> func.HttpResponse:
     """Downloads blob and returns it as HTML form. Allows GET for local testing."""
     try:
@@ -76,4 +77,5 @@ async def form_edit(req: func.HttpRequest) -> func.HttpResponse:
             }
         )
     except Exception as e:
+        logging.error(f"Error in form_edit: {str(e)}")  # Added proper logging
         return func.HttpResponse(str(e), status_code=500)
