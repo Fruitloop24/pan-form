@@ -1,18 +1,19 @@
-import logging
 import azure.functions as func
 import requests
 import os
-import json
 
-# Initialize the function app
 app = func.FunctionApp()
 
-# Get blob URL from environment variable
-ANALYSIS_BLOB_URL = os.getenv("ANALYSIS_BLOB_URL", "https://panstorage.blob.core.windows.net/open/analysis.json")
-
-def create_form_html(data):
-    """Create a standalone styled form."""
-    return f"""
+@app.function_name(name="form_edit")
+@app.route(route="form_edit", methods=["GET", "POST"], auth_level=func.AuthLevel.ANONYMOUS)  # Added GET for local testing
+async def form_edit(req: func.HttpRequest) -> func.HttpResponse:
+    """Downloads blob and returns it as HTML form. Allows GET for local testing."""
+    try:
+        # Grab the blob data
+        data = requests.get(os.getenv("ANALYSIS_BLOB_URL")).json()
+        
+        # Make the form
+        html = f"""
     <div style="background-color: #000; color: #F1F8E9; padding: 20px; border-radius: 10px; max-width: 600px; margin: auto; font-family: 'system-ui', sans-serif; box-shadow: 0 4px 8px rgba(0,0,0,0.3);">
         <h2 style="color: #4CAF50; font-size: 24px; margin-bottom: 15px; text-align: center;">Receipt Details</h2>
         
@@ -36,7 +37,7 @@ def create_form_html(data):
 
         <div style="margin-bottom: 20px;">
             <label for="date" style="color: #FDD835; font-weight: bold;">Date:</label>
-            <input id="date" type="date" value="{data.get('date', '2025-01-12')}" 
+            <input id="date" type="date" value="{data.get('date', 'Unknown')}" 
                    style="width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #4CAF50; border-radius: 5px; background-color: #2E7D32; color: #F1F8E9;"/>
         </div>
 
@@ -64,45 +65,15 @@ def create_form_html(data):
         </div>
     </div>
     """
-
-@app.function_name(name="form_edit")
-@app.route(route="form_edit", auth_level=func.AuthLevel.ANONYMOUS)
-async def form_edit(req: func.HttpRequest) -> func.HttpResponse:
-    logging.info('Form edit function processing request.')
-
-    try:
-        # Get the analysis data
-        response = requests.get(ANALYSIS_BLOB_URL)
-        response.raise_for_status()  # Raise exception for bad status codes
-        analysis_data = response.json()
         
-        # Create the HTML form
-        html_content = create_form_html(analysis_data)
-        
+        # Return the form with headers that allow you to see it anywhere
         return func.HttpResponse(
-            html_content,
+            html,
             mimetype="text/html",
             headers={
                 "Access-Control-Allow-Origin": "*",
                 "Cache-Control": "no-cache"
             }
         )
-
-    except requests.exceptions.RequestException as e:
-        logging.error(f"Error fetching analysis data: {str(e)}")
-        return func.HttpResponse(
-            "Error fetching analysis data",
-            status_code=500
-        )
-    except json.JSONDecodeError as e:
-        logging.error(f"Error parsing JSON: {str(e)}")
-        return func.HttpResponse(
-            "Error parsing analysis data",
-            status_code=500
-        )
     except Exception as e:
-        logging.error(f"Unexpected error: {str(e)}")
-        return func.HttpResponse(
-            f"Unexpected error: {str(e)}",
-            status_code=500
-        )
+        return func.HttpResponse(str(e), status_code=500)
