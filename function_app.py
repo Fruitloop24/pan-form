@@ -1,7 +1,8 @@
 import azure.functions as func
 import requests
 import os
-import logging  # Added this
+import logging
+from azure.storage.blob import BlobServiceClient, ContentSettings
 
 app = func.FunctionApp()
 
@@ -10,8 +11,10 @@ app = func.FunctionApp()
 async def form_edit(req: func.HttpRequest) -> func.HttpResponse:
     """Downloads blob and returns it as HTML form. Allows GET for local testing."""
     try:
+        logging.info("Starting form_edit function...")
         # Grab the blob data
         data = requests.get(os.getenv("ANALYSIS_BLOB_URL")).json()
+        logging.info("Got analysis data successfully")
         
         # Make the form
         html = f"""
@@ -66,6 +69,57 @@ async def form_edit(req: func.HttpRequest) -> func.HttpResponse:
         </div>
     </div>
     """
+        logging.info("HTML form generated successfully")
+        
+        # NEW CODE: Save to display container with more robust error handling
+        try:
+            logging.info("Starting blob save attempt...")
+            blob_service_client = BlobServiceClient.from_connection_string(os.getenv("AZURE_STORAGE_CONNECTION_STRING"))
+            logging.info("Got blob service client")
+            
+            # Debug log the connection string (masked)
+            conn_string = os.getenv("AZURE_STORAGE_CONNECTION_STRING", "NOT_FOUND")
+            logging.info(f"Connection string exists: {bool(conn_string)}")
+            
+            # Make sure container exists
+            container_client = blob_service_client.get_container_client("display")
+            if not container_client.exists():
+                logging.error("Display container does not exist!")
+                raise Exception("Display container not found")
+            logging.info("Container exists and is accessible")
+            
+            display_blob_client = blob_service_client.get_blob_client(
+                container="display",
+                blob="current_form.html"
+            )
+            logging.info("Got blob client")
+            
+            # Ensure html is a string and not None
+            if html is None:
+                html = ""
+            
+            # Force string type and encode
+            html_str = str(html).strip()
+            html_bytes = html_str.encode('utf-8')
+            
+            logging.info(f"HTML length: {len(html_str)}")
+            logging.info(f"Bytes length: {len(html_bytes)}")
+            
+            # Set content type for HTML
+            display_blob_client.upload_blob(
+                html_bytes, 
+                overwrite=True,
+                content_settings=ContentSettings(
+                    content_type='text/html',
+                    content_encoding='utf-8'
+                )
+            )
+            logging.info("Successfully uploaded HTML to blob")
+            
+        except Exception as blob_error:
+            logging.error(f"Failed to save to display container: {str(blob_error)}")
+            import traceback
+            logging.error(f"Full traceback:\n{traceback.format_exc()}")
         
         # Return the form with headers that allow you to see it anywhere
         return func.HttpResponse(
